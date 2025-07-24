@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Слот-машина с лицами</title>
+  <style>
+    body {
+      background-color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: white;
+      font-family: sans-serif;
+    }
+    .slot-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .column {
+      width: 100px;
+      height: 300px;
+      overflow: hidden;
+      border: 4px solid #fff;
+      border-radius: 8px;
+      position: relative;
+    }
+    .reel {
+      position: absolute;
+      width: 100%;
+      animation: none;
+    }
+    .reel img {
+      width: 100px;
+      height: 100px;
+      display: block;
+    }
+    .highlight {
+      position: absolute;
+      top: 100px;
+      left: 0;
+      width: 100%;
+      height: 100px;
+      background-color: rgba(255, 255, 255, 0.15);
+      border-top: 2px solid #ff0;
+      border-bottom: 2px solid #ff0;
+      z-index: 2;
+      pointer-events: none;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .win {
+      margin-top: 20px;
+      font-size: 24px;
+      color: yellow;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="slot-container" id="slots"></div>
+  <button onclick="spin()">Крутить!</button>
+  <div class="win" id="winText">🎉 ВЫЙГРЫШ!</div>
+
+  <script>
+    const faces = ["face1.png","face2.png","face3.png","face4.png","face5.png","face6.png",];
+    const columns = 3;
+    const rows = 3;
+    const reels = [];
+    const slotsContainer = document.getElementById("slots");
+
+    for (let i = 0; i < columns; i++) {
+      const col = document.createElement("div");
+      col.className = "column";
+      const highlight = document.createElement("div");
+      highlight.className = "highlight";
+      col.appendChild(highlight);
+
+      const reel = document.createElement("div");
+      reel.className = "reel";
+      for (let r = 0; r < rows * 4; r++) {
+        const img = document.createElement("img");
+        img.src = faces[Math.floor(Math.random() * faces.length)];
+        reel.appendChild(img);
+      }
+      col.appendChild(reel);
+      slotsContainer.appendChild(col);
+      reels.push(reel);
+    }
+
+    function spin() {
+      document.getElementById("winText").style.display = "none";
+
+      reels.forEach((reel, index) => {
+        reel.style.transition = "none";
+        reel.style.top = "0px";
+
+        setTimeout(() => {
+          const total = reel.children.length;
+          let offset = Math.floor(Math.random() * (total - 3)) * 100;
+
+          reel.style.transition = "top 2s ease-out";
+          reel.style.top = `-${offset}px`;
+
+          // Show result after all reels stop
+          if (index === reels.length - 1) {
+            setTimeout(checkWin, 2500);
+          }
+        }, index * 300);
+      });
+    }
+
+    function checkWin() {
+      const middleImages = reels.map(reel => {
+        const offset = parseInt(reel.style.top || "0");
+        const middleIndex = Math.abs(offset) / 100 + 1;
+        return reel.children[middleIndex].src;
+      });
+
+      const allEqual = middleImages.every(src => src === middleImages[0]);
+      if (allEqual) {
+        document.getElementById("winText").style.display = "block";
+      }
+    }
+  </script>
+</body>
+</html>
