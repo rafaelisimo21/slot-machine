@@ -1,134 +1,174 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Слот-машина с лицами</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Слот-машина</title>
   <style>
     body {
-      background-color: #111;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
       margin: 0;
-      color: white;
-      font-family: sans-serif;
+      padding: 0;
+      background: #000;
+      font-family: Arial, sans-serif;
+      color: #fff;
+      text-align: center;
     }
-    .slot-container {
+    .container {
+      padding: 30px;
+    }
+    .slot {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .column {
-      width: 100px;
-      height: 300px;
-      overflow: hidden;
-      border: 4px solid #fff;
-      border-radius: 8px;
+      justify-content: center;
+      margin-top: 30px;
       position: relative;
     }
     .reel {
-      position: absolute;
-      width: 100%;
-      animation: none;
+      width: 100px;
+      height: 240px;
+      overflow: hidden;
+      border: 2px solid #fff;
+      margin: 0 10px;
+      background: #111;
     }
     .reel img {
-      width: 100px;
-      height: 100px;
+      width: 100%;
+      height: 80px;
       display: block;
     }
     .highlight {
       position: absolute;
-      top: 100px;
+      top: 80px;
       left: 0;
       width: 100%;
-      height: 100px;
-      background-color: rgba(255, 255, 255, 0.15);
-      border-top: 2px solid #ff0;
-      border-bottom: 2px solid #ff0;
-      z-index: 2;
+      height: 80px;
+      border-top: 2px solid yellow;
+      border-bottom: 2px solid yellow;
       pointer-events: none;
     }
     button {
+      margin-top: 20px;
       padding: 10px 20px;
       font-size: 18px;
       cursor: pointer;
     }
-    .win {
-      margin-top: 20px;
-      font-size: 24px;
-      color: yellow;
-      display: none;
+    .stake-controls {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .stake-controls button {
+      margin: 0 10px;
     }
   </style>
 </head>
 <body>
-  <div class="slot-container" id="slots"></div>
-  <button onclick="spin()">Крутить!</button>
-  <div class="win" id="winText">🎉 ВЫЙГРЫШ!</div>
+  <div class="container">
+    <h2 id="balance">Баланс: 1000₽</h2>
+
+    <div class="slot">
+      <div class="reel" id="reel1"></div>
+      <div class="reel" id="reel2"></div>
+      <div class="reel" id="reel3"></div>
+      <div class="highlight"></div>
+    </div>
+
+    <button onclick="spin()">Крутить!</button>
+
+    <div class="stake-controls">
+      <button onclick="changeBet(-50)">-</button>
+      <div id="bet">Ставка: 50₽</div>
+      <button onclick="changeBet(50)">+</button>
+    </div>
+
+    <h3 id="message"></h3>
+  </div>
 
   <script>
-    const faces = ["face1.png","face2.png","face3.png","face4.png","face5.png","face6.png",];
-    const columns = 3;
-    const rows = 3;
-    const reels = [];
-    const slotsContainer = document.getElementById("slots");
+    const symbols = ['face1.png','face2.png','face3.png','face4.png','face5.png','face6.png'];
+    let balance = 1000;
+    let bet = 50;
 
-    for (let i = 0; i < columns; i++) {
-      const col = document.createElement("div");
-      col.className = "column";
-      const highlight = document.createElement("div");
-      highlight.className = "highlight";
-      col.appendChild(highlight);
-
-      const reel = document.createElement("div");
-      reel.className = "reel";
-      for (let r = 0; r < rows * 4; r++) {
-        const img = document.createElement("img");
-        img.src = faces[Math.floor(Math.random() * faces.length)];
-        reel.appendChild(img);
+    function changeBet(amount) {
+      const newBet = bet + amount;
+      if (newBet >= 50 && newBet <= balance) {
+        bet = newBet;
+        document.getElementById("bet").textContent = `Ставка: ${bet}₽`;
       }
-      col.appendChild(reel);
-      slotsContainer.appendChild(col);
-      reels.push(reel);
+    }
+
+    function updateBalance() {
+      document.getElementById("balance").textContent = `Баланс: ${balance}₽`;
     }
 
     function spin() {
-      document.getElementById("winText").style.display = "none";
+      if (bet > balance) {
+        alert("Недостаточно средств!");
+        return;
+      }
 
-      reels.forEach((reel, index) => {
-        reel.style.transition = "none";
-        reel.style.top = "0px";
+      const reels = [[], [], []];
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 12; j++) {
+          const rand = symbols[Math.floor(Math.random() * symbols.length)];
+          reels[i].push(rand);
+        }
+      }
 
-        setTimeout(() => {
-          const total = reel.children.length;
-          let offset = Math.floor(Math.random() * (total - 3)) * 100;
+      animateReel('reel1', reels[0]);
+      animateReel('reel2', reels[1]);
+      animateReel('reel3', reels[2]);
 
-          reel.style.transition = "top 2s ease-out";
-          reel.style.top = `-${offset}px`;
+      setTimeout(() => {
+        const mid1 = reels[0][4];
+        const mid2 = reels[1][4];
+        const mid3 = reels[2][4];
 
-          // Show result after all reels stop
-          if (index === reels.length - 1) {
-            setTimeout(checkWin, 2500);
-          }
-        }, index * 300);
-      });
+        if (mid1 === mid2 && mid2 === mid3) {
+          const win = bet * 20;
+          balance += win;
+          document.getElementById("message").textContent = `🎉 Win: +${win}₽`;
+        } else {
+          balance -= bet;
+          document.getElementById("message").textContent = `Не повезло...`;
+        }
+        updateBalance();
+      }, 3000);
     }
 
-    function checkWin() {
-      const middleImages = reels.map(reel => {
-        const offset = parseInt(reel.style.top || "0");
-        const middleIndex = Math.abs(offset) / 100 + 1;
-        return reel.children[middleIndex].src;
-      });
+    function animateReel(id, sequence) {
+      const reel = document.getElementById(id);
+      reel.innerHTML = '';
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i >= sequence.length - 2) {
+          clearInterval(interval);
+        }
+        reel.innerHTML = '';
+        for (let j = 0; j < 3; j++) {
+          const img = document.createElement('img');
+          const src = sequence[i + j] || sequence[sequence.length - 1];
+          img.src = src;
+          reel.appendChild(img);
+        }
+        i++;
+      }, 100);
+    }
 
-      const allEqual = middleImages.every(src => src === middleImages[0]);
-      if (allEqual) {
-        document.getElementById("winText").style.display = "block";
+    function renderInitialSpin() {
+      for (let i = 1; i <= 3; i++) {
+        const reel = document.getElementById('reel' + i);
+        reel.innerHTML = '';
+        for (let j = 0; j < 3; j++) {
+          const img = document.createElement('img');
+          img.src = symbols[Math.floor(Math.random() * symbols.length)];
+          reel.appendChild(img);
+        }
       }
     }
+
+    updateBalance();
+    renderInitialSpin();
   </script>
 </body>
 </html>
